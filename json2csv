@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+
+import json,csv
+import argparse
+import logging
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+# create logger
+logger = logging.getLogger('stdout')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
+def step(data, data_key=''):
+    res = {}
+    for k in data:
+        v = data[k]
+        v_type = type(v)
+
+        dk = data_key + k
+
+        # switch case
+        if v_type == list:
+            for i,nv in enumerate(v):
+                res.update(step(nv,dk + '_' + str(i) + '_'))
+        elif v_type == dict:
+            res.update(step(v,dk + '_'))
+        elif v_type in [str,int,float,bool]:
+            res[dk] = v
+        elif v is None:
+            res[dk] = ""
+
+    return res
+
+def getJSON(filename):
+    data = {}
+    try:
+        with open(filename) as f:
+            data = json.load(f)
+    except Exception as e:
+        logger.error(e)
+
+    return data
+
+def putCSV(filename,data):
+    try:
+        with open(filename, 'w') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=data.keys())
+            writer.writeheader()
+            writer.writerow(data)
+    except Exception as e:
+        logger.error(e)
+
+def parseArgs():    
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('input', help='Input JSON filename')
+    parser.add_argument('-o','--out', help='Output CSV filename')
+
+    args = parser.parse_args()
+    return args
+
+def main():
+    args = parseArgs()
+
+    filename = args.input
+    data = getJSON(filename)
+    
+    res = {}
+    if bool(data):
+        if type(data) == list:
+            print("Error: JSON with list root is currently not supported. Please provide JSON payload with object root and try again.")
+            return
+        else:
+            res = step(data)
+
+    if bool(res):
+        out_filename = args.out if bool(args.out) else 'out.csv' 
+        putCSV(out_filename,res)
+        logger.info("File saved to %s" % out_filename)
+
+if __name__ == "__main__":
+    main()
+    print('') #empty line before ending
