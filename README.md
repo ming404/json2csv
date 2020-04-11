@@ -9,3 +9,9 @@ Usage:
 ```
 json2csv [-h] [-o out.csv] input.json
 ```
+
+Install Dependecies:
+
+```
+pip3 install -r requirements.txt 
+```

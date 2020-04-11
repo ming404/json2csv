@@ -3,6 +3,7 @@
 import json,csv
 import argparse
 import logging
+from flatten_json import flatten
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
@@ -13,27 +14,6 @@ ch.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 logger = logging.getLogger('stdout')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(ch)
-
-def step(data, data_key=''):
-    res = {}
-    for k in data:
-        v = data[k]
-        v_type = type(v)
-
-        dk = data_key + k
-
-        # switch case
-        if v_type == list:
-            for i,nv in enumerate(v):
-                res.update(step(nv,dk + '_' + str(i) + '_'))
-        elif v_type == dict:
-            res.update(step(v,dk + '_'))
-        elif v_type in [str,int,float,bool]:
-            res[dk] = v
-        elif v is None:
-            res[dk] = ""
-
-    return res
 
 def getJSON(filename):
     data = {}
@@ -74,7 +54,7 @@ def main():
             print("Error: JSON with list root is currently not supported. Please provide JSON payload with object root and try again.")
             return
         else:
-            res = step(data)
+            res = flatten(data)
 
     if bool(res):
         out_filename = args.out if bool(args.out) else 'out.csv' 
